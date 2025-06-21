@@ -9,6 +9,10 @@ import path from "path";
 import authRoutes from './routes/authRoutes';
 import hotelRoutes from './routes/hotelRoutes';
 import messageRoutes from './routes/messageRoutes';
+import healthRoutes from './routes/healthRoutes';
+
+// Swagger 配置
+import { swaggerSpec } from './config/swagger';
 
 // 錯誤處理中間件
 import { errorHandler } from './middleware/error';
@@ -28,12 +32,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // API Routes
+app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/messages', messageRoutes);
 
 // Swagger Documentation
-// TODO: Add Swagger configuration
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Error handling middleware
 app.use(errorHandler);
@@ -48,6 +53,8 @@ mongoose.connect(MONGODB_URI)
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
+      console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
+      console.log(`Health check available at http://localhost:${PORT}/api/health`);
     });
   })
   .catch((error) => {

@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # MongoDB 資料庫
+  mongodb:
+    image: mongo:6.0
+    container_name: wanderlust-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: wanderlust
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - wanderlust-network
+
+  # API 服務
+  api:
+    build: .
+    container_name: wanderlust-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/wanderlust?authSource=admin
+      JWT_SECRET: your-super-secret-jwt-key-here
+      PORT: 5000
+      EMPLOYEE_SIGNUP_CODE: WANDERLUST2024
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./src:/app/src
+    depends_on:
+      - mongodb
+    networks:
+      - wanderlust-network
+    command: npm run dev
+
+  # 前端應用 (可選)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: wanderlust-frontend
+    restart: unless-stopped
+    environment:
+      REACT_APP_API_URL: http://localhost:5000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    networks:
+      - wanderlust-network
+    volumes:
+      - ./src:/app/src
+    command: npm start
+
+volumes:
+  mongodb_data:
+
+networks:
+  wanderlust-network:
+    driver: bridge 
